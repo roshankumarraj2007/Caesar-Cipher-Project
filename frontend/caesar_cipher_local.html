@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caesar Cipher</title>
+<script>
+  /* apply the saved theme before the page paints (no colour flash) */
+  try { var t = localStorage.getItem("cc-theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+</script>
+<style>
+  /* ================= THEMES (colour tokens) ================= */
+  :root {
+    /* default theme: Wine and Gold */
+    --bg-1: #1a0a0f; --bg-2: #34101c; --bg-3: #1f0b12;
+    --crimson: #9b1b30; --crimson-d: #7a1225; --crimson-dd: #4a1424;
+    --ptr-a: #b3213a; --ptr-b: #6e1022;
+    --ring-a: #9b1b30; --ring-b: #8a1629; --ring-text: #f6e3a1;
+    --core-a: #5a1a2c; --core-b: #2e0b16;
+    --gold-xl: #fbeeb8; --gold-l: #f3dc8f; --gold: #d4a62a; --gold-d: #a67c12; --gold-xd: #7a5a0a;
+    --bez-dark: #8a6a14; --tick: #5a3d06;
+    --wedge-a: #fffdf6; --wedge-b: #f4e9cc; --wedge-line: #c9a64a;
+    --hl: #f0cd5c; --key: #fff6c9; --hl-text: #3d0f1a;
+    --parch: #fbf5e6; --parch-2: #f3e9cf; --tan: #dfcfa5; --field: #fffdf6;
+    --brown: #2e1c15; --muted: #7d6a58; --sub: #d9c9b6; --foot: #b9a58b;
+    --ok: #1e6b47; --ok-bg: #e4f3e8;
+    --err: #9b1b30; --err-bg: #fbe9e9;
+    --serif: "Cinzel", "Trajan Pro", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+  }
+  :root[data-theme="emerald"] {
+    --bg-1: #04140e; --bg-2: #0c3a2a; --bg-3: #06180f;
+    --crimson: #0f6b4a; --crimson-d: #0a5238; --crimson-dd: #06301f;
+    --ptr-a: #17895f; --ptr-b: #094a33;
+    --ring-a: #0f6b4a; --ring-b: #0c5c40;
+    --core-a: #136048; --core-b: #062a1d;
+    --wedge-a: #fbfef7; --wedge-b: #eaf2dc;
+    --hl-text: #0a2a1d;
+    --parch: #f4f8ee; --parch-2: #e7efdb; --tan: #cdd9b9; --field: #fbfef8;
+    --brown: #1d2a22; --muted: #66756a; --sub: #cfe0d4; --foot: #8fb09d;
+  }
+  :root[data-theme="royal"] {
+    --bg-1: #12081f; --bg-2: #2a1250; --bg-3: #160a29;
+    --crimson: #5b2fb5; --crimson-d: #46208e; --crimson-dd: #2a1260;
+    --ptr-a: #7a4be0; --ptr-b: #3a1a80;
+    --ring-a: #5b2fb5; --ring-b: #4f2aa0;
+    --core-a: #4a2896; --core-b: #1a0c3a;
+    --wedge-a: #fffdfb; --wedge-b: #efe6f7;
+    --hl-text: #2a1260;
+    --parch: #f8f3fc; --parch-2: #ece2f5; --tan: #d6c8e6; --field: #fffcff;
+    --brown: #241833; --muted: #756890; --sub: #d6cbe8; --foot: #a596c4;
+  }
+  :root[data-theme="obsidian"] {
+    --bg-1: #08080b; --bg-2: #1b1b22; --bg-3: #0d0d11;
+    --crimson: #2c2c36; --crimson-d: #1d1d25; --crimson-dd: #0f0f14;
+    --ptr-a: #4a4a58; --ptr-b: #16161c;
+    --ring-a: #2c2c36; --ring-b: #23232b; --ring-text: #eceef3;
+    --core-a: #3a3a47; --core-b: #0d0d12;
+    --gold-xl: #ffffff; --gold-l: #e8eaf0; --gold: #b9bdc9; --gold-d: #7d8393; --gold-xd: #4a4f5c;
+    --bez-dark: #6b7080; --tick: #2f333d;
+    --wedge-a: #fdfdfe; --wedge-b: #eceef2; --wedge-line: #aeb3c0;
+    --hl: #ffd45e; --key: #fff1b8; --hl-text: #14141a;
+    --parch: #f3f3f6; --parch-2: #e7e8ed; --tan: #ced0d8; --field: #fcfcfd;
+    --brown: #1c1c22; --muted: #6c6f7b; --sub: #c8cad3; --foot: #8b8f9c;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; background: var(--bg-1); }
+  body {
+    margin: 0; min-height: 100vh; color: var(--brown); position: relative; overflow-x: hidden;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(color-mix(in srgb, var(--gold) 9%, transparent) 1px, transparent 1.3px) 0 0 / 24px 24px,
+      linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 52%, var(--bg-3) 100%);
+    padding: 28px 16px 56px;
+  }
+  /* one soft, static light at the top */
+  body::before {
+    content: ""; position: fixed; z-index: 0; pointer-events: none; border-radius: 50%;
+    width: 640px; height: 360px; left: 50%; top: -140px; transform: translateX(-50%);
+    background: var(--gold); filter: blur(120px); opacity: .13;
+  }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 620px; margin: 0 auto; }
+
+  /* ---------- opening animation ---------- */
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .toolbar { animation: rise .6s both; }
+  .brand   { animation: rise .7s .06s both; }
+  .card    { animation: rise .8s .18s both; }
+
+  /* ---------- toolbar: theme swatches + sound ---------- */
+  .toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin: 0 0 18px; }
+  .themes { display: flex; gap: 9px; align-items: center; }
+  .sw {
+    width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer;
+    border: 2px solid var(--gold-l);
+    background: linear-gradient(135deg, var(--a) 50%, var(--g, #d4a62a) 50%);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .sw:hover { transform: scale(1.1); }
+  .sw[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg-1), 0 0 0 5px var(--gold-l); }
+  .fb {
+    width: 34px; height: 34px; border-radius: 50%; cursor: pointer; padding: 0;
+    display: grid; place-items: center; color: var(--gold-l);
+    border: 1.5px solid color-mix(in srgb, var(--gold) 60%, transparent);
+    background: color-mix(in srgb, var(--gold) 10%, transparent);
+  }
+  .fb .waves { display: none; }
+  .fb.on { background: linear-gradient(145deg, var(--gold-l), var(--gold)); color: var(--brown); border-color: var(--gold-l); }
+  .fb.on .waves { display: inline; }
+  .fb.on .slash { display: none; }
+  .sw:focus-visible, .fb:focus-visible { outline: 3px solid var(--gold-l); outline-offset: 3px; }
+
+  /* ---------- centred heading ---------- */
+  .brand { text-align: center; margin: 0 0 30px; }
+  .emblem {
+    width: 78px; height: 78px; border-radius: 50%; margin: 0 auto 16px;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 30%, var(--gold-l), var(--gold) 55%, var(--gold-d));
+    border: 3px solid var(--gold-xl);
+    box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 4px color-mix(in srgb, var(--crimson-d) 18%, transparent);
+  }
+  .emblem svg { stroke: var(--crimson-dd); }
+  .emblem svg circle { fill: var(--crimson-dd); }
+  .brand h1 {
+    margin: 0; font-family: var(--serif); font-weight: 700; font-size: 44px; line-height: 1.1;
+    letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(180deg, var(--gold-xl) 0%, var(--gold) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: var(--gold);
+  }
+  .orn { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 14px 0 12px; }
+  .orn .ln { width: 70px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+  .orn .ln:last-child { background: linear-gradient(270deg, transparent, var(--gold)); }
+  .orn .dia { width: 9px; height: 9px; background: var(--gold); transform: rotate(45deg); }
+  .brand p { margin: 0; font-size: 15px; color: var(--sub); }
+  .tags { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .tags span {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    padding: 6px 13px; border-radius: 999px; color: var(--gold-l);
+    border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+    background: color-mix(in srgb, var(--gold) 8%, transparent);
+  }
+
+  /* ---------- parchment card ---------- */
+  .card {
+    position: relative; background: var(--parch); border-radius: 22px;
+    padding: 34px 32px 30px; border: 2px solid var(--gold);
+    box-shadow: 0 24px 60px rgba(0,0,0,.55);
+  }
+  .card::after {
+    content: ""; position: absolute; inset: 7px; border-radius: 16px; pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--gold-d) 40%, transparent);
+  }
+
+  .field { margin-bottom: 22px; }
+  .field > label, .field > .lbl {
+    display: flex; align-items: center; gap: 11px;
+    font-size: 13px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--crimson-d); margin-bottom: 10px;
+  }
+  .num {
+    min-width: 28px; height: 28px; padding: 0 6px; border-radius: 50%; flex: none;
+    background: linear-gradient(145deg, var(--gold-l), var(--gold)); color: var(--brown);
+    font-family: var(--serif); font-size: 12px; font-weight: 800; letter-spacing: 0;
+    display: grid; place-items: center; border: 1px solid var(--gold-d);
+  }
+
+  input[type=text], input[type=number] {
+    width: 100%; padding: 14px 15px; font-size: 16px; color: var(--brown);
+    border: 2px solid var(--tan); border-radius: 12px; background: var(--field);
+    font-family: inherit; transition: border-color .15s, box-shadow .15s;
+  }
+  input::placeholder { color: color-mix(in srgb, var(--muted) 60%, white); }
+  input:focus {
+    outline: none; border-color: var(--crimson);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--crimson) 15%, transparent);
+  }
+
+  .choice-row { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+  .chip {
+    flex: 1 1 130px; display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px; border-radius: 12px; cursor: pointer;
+    border: 2px solid var(--tan); background: var(--parch-2); color: var(--brown);
+    font-size: 15px; font-weight: 700; font-family: inherit; text-align: left;
+    transition: all .15s;
+  }
+  .chip b {
+    width: 28px; height: 28px; border-radius: 8px; flex: none;
+    display: grid; place-items: center; font-size: 14px;
+    background: var(--field); border: 2px solid var(--tan); color: var(--crimson);
+  }
+  .chip:hover { border-color: var(--crimson); }
+  .chip.on {
+    color: #fff; border-color: var(--crimson-d);
+    background: linear-gradient(145deg, var(--crimson), var(--crimson-d));
+    box-shadow: 0 3px 8px color-mix(in srgb, var(--crimson-d) 30%, transparent);
+  }
+  .chip.on b { background: var(--gold); border-color: var(--gold-l); color: var(--brown); }
+  .choice-row input { flex: 0 0 96px; text-align: center; font-weight: 800; }
+
+  .hint { margin: 8px 2px 0; font-size: 12px; color: var(--muted); }
+
+  .run {
+    width: 100%; padding: 16px; font-size: 17px; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--brown); border: 0; border-radius: 14px;
+    cursor: pointer; font-family: var(--serif);
+    background: linear-gradient(180deg, var(--gold-l), var(--gold) 55%, var(--gold-d));
+    box-shadow: 0 5px 12px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.5);
+    transition: transform .1s, filter .15s;
+  }
+  .run:hover { filter: brightness(1.05); }
+  .run:active { transform: translateY(1px); }
+  .run:focus-visible, .chip:focus-visible, .copy:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--crimson); outline-offset: 2px;
+  }
+
+  .result {
+    margin-top: 24px; border-radius: 14px; padding: 16px 16px 14px;
+    background: var(--parch-2); border: 2px dashed var(--tan);
+  }
+  .result .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .result .acts { display: flex; gap: 8px; }
+  .result .tag { font-size: 12px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+  .result .text {
+    margin-top: 8px; font-family: var(--mono); font-size: 19px; line-height: 1.5;
+    word-break: break-word; min-height: 29px; color: var(--muted); white-space: pre-wrap;
+  }
+  .result.ok { background: var(--ok-bg); border: 2px solid #8fcca8; }
+  .result.ok .text, .result.ok .tag { color: var(--ok); }
+  .result.err { background: var(--err-bg); border: 2px solid #e3a5ac; }
+  .result.err .text, .result.err .tag { color: var(--err); }
+  .result.pop { animation: pop .22s ease-out; }
+  @keyframes pop { from { opacity: .55; } to { opacity: 1; } }
+
+  .copy {
+    border: 2px solid #8fcca8; background: #fff; color: var(--ok);
+    font-size: 13px; font-weight: 800; padding: 6px 13px; border-radius: 9px;
+    cursor: pointer; font-family: inherit; display: none;
+  }
+  .result.ok .copy { display: inline-block; }
+
+  /* ---------- number alert under the message box ---------- */
+  .alert {
+    display: none; align-items: center; gap: 9px; margin-top: 9px; padding: 10px 12px;
+    border-radius: 10px; background: var(--err-bg); border: 2px solid #e3a5ac; color: var(--err);
+    font-size: 13px; font-weight: 700; line-height: 1.4;
+  }
+  .alert.show { display: flex; animation: pop .22s ease-out; }
+  .alert svg { flex: none; }
+  #message.bad { border-color: var(--err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 15%, transparent); animation: shake .35s; }
+  @keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+
+  /* ---------- cipher wheel ---------- */
+  .preview { margin-top: 28px; padding-top: 24px; border-top: 2px dashed var(--tan); text-align: center; }
+  .preview h2 {
+    margin: 0 0 4px; font-family: var(--serif); font-size: 15px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--crimson-d);
+  }
+  .preview .cap { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  #wheel {
+    display: block; width: 100%; max-width: 400px; height: auto; margin: 0 auto;
+    filter: drop-shadow(0 12px 12px rgba(0,0,0,.3));
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  #wheel:focus { outline: none; }
+  #wheel:focus-visible { outline: 3px solid var(--crimson); outline-offset: 6px; border-radius: 50%; }
+  #inner { transition: transform .75s cubic-bezier(.34,1.5,.5,1); }
+  #wheel.drag #inner { transition: transform .12s ease-out; }
+  /* transparent touch layer over the inner ring: touches here turn the wheel, everywhere else the page scrolls */
+  #wheelBox { position: relative; max-width: 400px; margin: 0 auto; }
+  #grip {
+    position: absolute; left: 15%; top: 18.18%; width: 70%; height: 67.38%; border-radius: 50%;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  #grip.drag { cursor: grabbing; }
+  /* wheel cells (base colours use :where so the highlight classes below always win) */
+  :where(.ow) { fill: var(--wedge-a); stroke: var(--wedge-line); stroke-width: 1; cursor: pointer; }
+  :where(.ow.alt) { fill: var(--wedge-b); }
+  :where(.iw) { fill: var(--ring-a); stroke: var(--gold-l); stroke-width: 1; }
+  :where(.iw.alt) { fill: var(--ring-b); }
+  .wo { font: 700 17px Georgia, "Times New Roman", serif; fill: var(--brown); }
+  .wi { font: 700 16px Georgia, "Times New Roman", serif; fill: var(--ring-text); }
+  .wo, .wi { pointer-events: none; }
+  .hubl { font: 700 9.5px Georgia, "Times New Roman", serif; letter-spacing: 2.2px; fill: var(--crimson-dd); }
+  .hubn { font: 700 32px Georgia, "Times New Roman", serif; fill: var(--crimson-dd); }
+  /* highlight: letters of your message, and the A-position pair at the pointer */
+  .w-hl { fill: var(--hl); }
+  .w-key { fill: var(--key); stroke-width: 2.4; filter: url(#glow); }
+  #oWedges .w-key { stroke: var(--crimson); }
+  #iWedges .w-key { stroke: var(--key); }
+  .t-hl, .t-key { fill: var(--hl-text); }
+  .eg { margin: 10px 0 0; font-size: 14px; font-weight: 700; color: var(--crimson-d); }
+  .hint2 { margin: 6px auto 0; max-width: 420px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+  footer { margin: 22px 6px 0; text-align: center; font-size: 12px; color: var(--foot); line-height: 1.6; }
+
+  @media (max-width: 480px) {
+    body { padding: 20px 12px 40px; }
+    .card { padding: 28px 16px 24px; border-radius: 18px; }
+    .card::after { inset: 5px; border-radius: 14px; }
+    .emblem { width: 66px; height: 66px; }
+    .brand h1 { font-size: 30px; letter-spacing: 2px; }
+    .orn .ln { width: 48px; }
+    .choice-row { gap: 8px; flex-wrap: nowrap; }
+    .chip { flex: 1 1 0; min-width: 0; padding: 11px 10px; gap: 8px; font-size: 14px; }
+    .chip b { width: 24px; height: 24px; }
+    .choice-row input { flex: 0 0 72px; padding-left: 6px; padding-right: 6px; }
+    .result .text { font-size: 17px; }
+    .result .copy { padding: 6px 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="toolbar">
+    <div class="themes" role="group" aria-label="Theme">
+      <button type="button" class="sw" data-t="roman" title="Wine &amp; Gold" aria-label="Wine and Gold theme" aria-pressed="true" style="--a:#9b1b30"></button>
+      <button type="button" class="sw" data-t="emerald" title="Emerald &amp; Gold" aria-label="Emerald and Gold theme" aria-pressed="false" style="--a:#0f6b4a"></button>
+      <button type="button" class="sw" data-t="royal" title="Royal Purple &amp; Gold" aria-label="Royal Purple and Gold theme" aria-pressed="false" style="--a:#5b2fb5"></button>
+      <button type="button" class="sw" data-t="obsidian" title="Obsidian &amp; Silver" aria-label="Obsidian and Silver theme" aria-pressed="false" style="--a:#2c2c36;--g:#b9bdc9"></button>
+    </div>
+    <button type="button" class="fb" id="fb" title="Sound and vibration" aria-label="Sound and vibration" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor"/>
+        <path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path class="waves" d="M18.5 5.5a9 9 0 0 1 0 13"/>
+        <line class="slash" x1="16" y1="9" x2="22" y2="15"/>
+        <line class="slash" x1="22" y1="9" x2="16" y2="15"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="brand">
+    <div class="emblem" aria-hidden="true">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#5a0f1f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2.5"/>
+        <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        <circle cx="12" cy="16" r="1.3" fill="#5a0f1f"/>
+      </svg>
+    </div>
+    <h1>Caesar Cipher</h1>
+    <div class="orn" aria-hidden="true"><span class="ln"></span><span class="dia"></span><span class="ln"></span></div>
+    <p>Encrypt and decrypt messages by shifting letters</p>
+    <div class="tags"><span>Encrypt</span><span>Decrypt</span><span>Any shift</span></div>
+  </div>
+
+  <main class="card">
+    <div id="f" role="group" aria-label="Caesar cipher form">
+
+      <div class="field">
+        <div class="lbl"><span class="num">I</span>Enter choice</div>
+        <div class="choice-row">
+          <button type="button" class="chip" data-v="1"><b>1</b>Encrypt</button>
+          <button type="button" class="chip" data-v="2"><b>2</b>Decrypt</button>
+          <input id="choice" type="number" step="1" inputmode="numeric" placeholder="1 or 2" aria-label="Choice number">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="message"><span class="num">II</span>Enter message</label>
+        <input id="message" type="text" placeholder="Type your message here">
+        <div id="msgAlert" class="alert" role="alert" aria-live="assertive">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Only alphabets are allowed in the message. Numbers are not accepted.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="shift"><span class="num">III</span>Enter shift value</label>
+        <input id="shift" type="number" step="1" inputmode="numeric" placeholder="e.g. 3">
+        <p class="hint">Negative and large values work too. The shift is reduced to 0-25.</p>
+      </div>
+
+      <button type="button" class="run" id="run">Run</button>
+
+      <div id="result" class="result">
+        <div class="top">
+          <span class="tag" id="tag">Output</span>
+          <span class="acts">
+            <button type="button" class="copy" id="reverse">Decrypt this</button>
+            <button type="button" class="copy" id="copy">Copy</button>
+          </span>
+        </div>
+        <div class="text" id="text" aria-hidden="true">Your result will appear here</div>
+        <div class="sr-only" id="srText" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <section class="preview" aria-label="Cipher wheel">
+      <h2>Cipher Wheel</h2>
+      <p class="cap" id="pv-cap">Shift 0</p>
+      <div id="wheelBox"></div>
+      <p class="eg" id="eg"></p>
+      <p class="hint2">Drag the inner ring, tap any outer letter (A becomes that letter), or use the arrow keys. Gold letters are the letters of your message.</p>
+    </section>
+  </main>
+
+  <footer>Same logic as the C++ program. Decryption uses the reverse shift (26 - shift) % 26.</footer>
+</div>
+
+<script>
+/* ---- Same logic as the C++ program ---- */
+
+function caesar(text, shift) {
+  let result = "";
+  for (const ch of text) {
+    if (ch >= 'A' && ch <= 'Z')
+      result += String.fromCharCode((ch.charCodeAt(0) - 65 + shift) % 26 + 65);
+    else if (ch >= 'a' && ch <= 'z')
+      result += String.fromCharCode((ch.charCodeAt(0) - 97 + shift) % 26 + 97);
+    else
+      result += ch;
+  }
+  return result;
+}
+
+// Mirrors main(): normalise shift, reverse it for decrypt, then choose the output.
+function runProgram(choice, message, shift) {
+  shift = ((shift % 26) + 26) % 26;
+
+  if (choice === 2)
+    shift = (26 - shift) % 26;
+
+  if (choice === 1 || choice === 2)
+    return "Result: " + caesar(message, shift);
+  else
+    return "Invalid choice!";
+}
+
+/* ---- Page wiring (display only) ---- */
+if (typeof document !== "undefined") {
+  const $ = (id) => document.getElementById(id);
+  const choiceEl = $("choice"), msgEl = $("message"), shiftEl = $("shift");
+  const resBox = $("result"), resText = $("text"), resTag = $("tag"), copyBtn = $("copy");
+  const reverseBtn = $("reverse"), srText = $("srText");
+  const chips = document.querySelectorAll(".chip");
+  const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let lastOutput = "";
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  // ---------- themes ----------
+  const THEMES = ["roman", "emerald", "royal", "obsidian"];
+  const swatches = document.querySelectorAll(".sw");
+  function applyTheme(name) {
+    if (THEMES.indexOf(name) < 0) name = "roman";
+    document.documentElement.setAttribute("data-theme", name);
+    swatches.forEach(function (s) { s.setAttribute("aria-pressed", s.dataset.t === name ? "true" : "false"); });
+  }
+  swatches.forEach(function (s) {
+    s.addEventListener("click", function () { applyTheme(s.dataset.t); store("cc-theme", s.dataset.t); });
+  });
+  applyTheme(load("cc-theme") || "roman");
+
+  // ---------- sound + vibration (off by default) ----------
+  const fbBtn = $("fb");
+  let fbOn = load("cc-fb") === "1";
+  let actx = null;
+  function syncFb() {
+    fbBtn.setAttribute("aria-pressed", fbOn ? "true" : "false");
+    fbBtn.classList.toggle("on", fbOn);
+  }
+  function clickSound() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+      o.type = "triangle"; o.frequency.value = 1500;
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + 0.05);
+    } catch (e) {}
+  }
+  function feedback() {
+    if (!fbOn) return;
+    try { if (navigator.vibrate) navigator.vibrate(7); } catch (e) {}
+    clickSound();
+  }
+  fbBtn.addEventListener("click", function () {
+    fbOn = !fbOn;
+    store("cc-fb", fbOn ? "1" : "0");
+    syncFb();
+    if (fbOn) feedback();
+  });
+  syncFb();
+
+  // ---------- choice chips ----------
+  function syncChips() {
+    chips.forEach((c) => c.classList.toggle("on", c.dataset.v === choiceEl.value.trim()));
+  }
+  chips.forEach((c) => c.addEventListener("click", () => {
+    choiceEl.value = c.dataset.v;
+    syncChips();
+  }));
+  choiceEl.addEventListener("input", syncChips);
+
+  // ---------- Cipher wheel (display only; the cipher logic is above) ----------
+  const STEP = 360 / 26;
+  const CX = 180, CY = 194;
+
+  function pt(r, deg) {
+    const t = deg * Math.PI / 180;
+    return [CX + r * Math.sin(t), CY - r * Math.cos(t)];
+  }
+  function f(n) { return n.toFixed(2); }
+  function wedge(r1, r2, a0, a1) {
+    const A = pt(r2, a0), B = pt(r2, a1), C = pt(r1, a1), D = pt(r1, a0);
+    return "M" + f(A[0]) + " " + f(A[1]) + " A" + r2 + " " + r2 + " 0 0 1 " + f(B[0]) + " " + f(B[1]) +
+           " L" + f(C[0]) + " " + f(C[1]) + " A" + r1 + " " + r1 + " 0 0 0 " + f(D[0]) + " " + f(D[1]) + " Z";
+  }
+
+  (function buildWheel() {
+    let s = '<svg id="wheel" viewBox="0 0 360 374" role="slider" tabindex="0" aria-label="Shift value. Use the left and right arrow keys." aria-valuemin="0" aria-valuemax="25" aria-valuenow="0">';
+    s += '<defs>' +
+      '<linearGradient id="gBez" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--gold-xl)"/><stop offset=".35" style="stop-color:var(--gold)"/><stop offset=".65" style="stop-color:var(--gold-l)"/><stop offset="1" style="stop-color:var(--gold-d)"/></linearGradient>' +
+      '<radialGradient id="gHub" cx="35%" cy="30%" r="80%"><stop offset="0" style="stop-color:var(--gold-xl)"/><stop offset=".6" style="stop-color:var(--gold)"/><stop offset="1" style="stop-color:var(--gold-d)"/></radialGradient>' +
+      '<radialGradient id="gCore" cx="50%" cy="50%" r="60%"><stop offset="0" style="stop-color:var(--core-a)"/><stop offset="1" style="stop-color:var(--core-b)"/></radialGradient>' +
+      '<radialGradient id="gSheen" cx="32%" cy="22%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset=".5" stop-color="#fff" stop-opacity=".04"/><stop offset="1" stop-color="#000" stop-opacity=".16"/></radialGradient>' +
+      '<linearGradient id="gLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--gold-l)"/><stop offset="1" style="stop-color:var(--gold-d)"/></linearGradient>' +
+      '<linearGradient id="gPtr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ptr-a)"/><stop offset="1" style="stop-color:var(--ptr-b)"/></linearGradient>' +
+      '<filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      '</defs>';
+
+    // bezel with tick marks and diamonds
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="178" fill="url(#gBez)" style="stroke:var(--gold-xd)" stroke-width="1.5"/>';
+    for (let i = 0; i < 52; i++) {
+      const a = i * STEP / 2, lg = i % 2 === 0;
+      const p = pt(lg ? 170 : 172.5, a), q = pt(lg ? 176 : 175, a);
+      s += '<line x1="' + f(p[0]) + '" y1="' + f(p[1]) + '" x2="' + f(q[0]) + '" y2="' + f(q[1]) +
+           '" style="stroke:var(--tick)" stroke-opacity=".7" stroke-width="' + (lg ? 1.3 : 0.8) + '"/>';
+    }
+    [90, 180, 270].forEach(function (a) {
+      const p = pt(173, a);
+      s += '<polygon points="' + f(p[0]) + ',' + f(p[1] - 5.5) + ' ' + f(p[0] + 4.2) + ',' + f(p[1]) + ' ' +
+           f(p[0]) + ',' + f(p[1] + 5.5) + ' ' + f(p[0] - 4.2) + ',' + f(p[1]) + '" style="fill:var(--crimson-d);stroke:var(--gold-xl)" stroke-width="1"/>';
+    });
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="167" style="fill:var(--bez-dark)"/>';
+
+    // outer ring: plain letters (fixed), one cell per letter
+    s += '<g id="oWedges">';
+    for (let i = 0; i < 26; i++) {
+      s += '<path id="ow' + i + '" class="ow' + (i % 2 ? ' alt' : '') + '" d="' + wedge(128, 166, (i - 0.5) * STEP, (i + 0.5) * STEP) + '"/>';
+    }
+    s += '</g><g>';
+    for (let i = 0; i < 26; i++) {
+      s += '<text id="ot' + i + '" class="wo" x="' + CX + '" y="' + (CY - 147) + '" transform="rotate(' + f(i * STEP) + ' ' + CX + ' ' + CY +
+           ')" text-anchor="middle" dominant-baseline="central">' + ABC[i] + '</text>';
+    }
+    s += '</g>';
+
+    // inner ring: cipher letters (turns with the shift)
+    s += '<g id="inner" style="transform-origin:' + CX + 'px ' + CY + 'px;transform:rotate(0deg)">' +
+         '<circle cx="' + CX + '" cy="' + CY + '" r="126" fill="url(#gCore)"/><g id="iWedges">';
+    for (let i = 0; i < 26; i++) {
+      s += '<path id="iw' + i + '" class="iw' + (i % 2 ? ' alt' : '') + '" d="' + wedge(86, 125, (i - 0.5) * STEP, (i + 0.5) * STEP) + '"/>';
+    }
+    s += '</g><g>';
+    for (let i = 0; i < 26; i++) {
+      s += '<text id="it' + i + '" class="wi" x="' + CX + '" y="' + (CY - 105.5) + '" transform="rotate(' + f(i * STEP) + ' ' + CX + ' ' + CY +
+           ')" text-anchor="middle" dominant-baseline="central">' + ABC[i] + '</text>';
+    }
+    s += '</g></g>';
+
+    // rims, metallic sheen
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="126.5" fill="none" stroke="url(#gBez)" stroke-width="4"/>';
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="86" fill="none" stroke="url(#gBez)" stroke-width="3.5"/>';
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="166" fill="url(#gSheen)" pointer-events="none"/>';
+
+    // laurel wreath
+    for (let k = 0; k < 9; k++) {
+      const th = 168 - k * 15;
+      [[68, 38], [62, -38]].forEach(function (pr, idx) {
+        const t2 = th - idx * 6;
+        [1, -1].forEach(function (side) {
+          const q = side === 1 ? pt(pr[0], t2) : pt(pr[0], 360 - t2);
+          const ang = side === 1 ? t2 + pr[1] : 360 - t2 - pr[1];
+          s += '<ellipse cx="' + f(q[0]) + '" cy="' + f(q[1]) + '" rx="9" ry="3.6" transform="rotate(' + f(ang) + ' ' + f(q[0]) + ' ' + f(q[1]) +
+               ')" fill="url(#gLeaf)" style="stroke:var(--gold-xd)" stroke-width=".6"/>';
+        });
+      });
+    }
+
+    // hub
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="46" fill="url(#gHub)" style="stroke:var(--gold-xl)" stroke-width="2"/>';
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="40" fill="none" style="stroke:var(--gold-d)" stroke-width=".8"/>';
+    s += '<text class="hubl" x="' + CX + '" y="' + (CY - 17) + '" text-anchor="middle" dominant-baseline="central">SHIFT</text>';
+    s += '<text id="hub" class="hubn" x="' + CX + '" y="' + (CY + 9) + '" text-anchor="middle" dominant-baseline="central">0</text>';
+
+    // pointer
+    s += '<g id="ptr" style="transform-origin:' + CX + 'px 10px">' +
+         '<path d="M166 2 L194 2 L180 36 Z" fill="url(#gPtr)" style="stroke:var(--gold-xl)" stroke-width="2" stroke-linejoin="round"/>' +
+         '<circle cx="180" cy="11" r="3.4" style="fill:var(--gold-xl)"/></g>';
+
+    s += '</svg><div id="grip" aria-hidden="true"></div>';
+    $("wheelBox").innerHTML = s;
+  })();
+
+  const svg = $("wheel"), inner = $("inner"), ptr = $("ptr"), grip = $("grip");
+  const hubNum = $("hub"), capEl = $("pv-cap"), egEl = $("eg");
+  const oW = [], oT = [], iW = [], iT = [];
+  for (let i = 0; i < 26; i++) {
+    oW.push($("ow" + i)); oT.push($("ot" + i)); iW.push($("iw" + i)); iT.push($("it" + i));
+  }
+
+  function getEff() {
+    const raw = shiftEl.value.trim();
+    const n = Number(raw);
+    return (raw !== "" && Number.isInteger(n)) ? ((n % 26) + 26) % 26 : 0;
+  }
+
+  let rot = 0, curEff = 0, tickReady = false;
+
+  function tick() {   // ratchet "click": pointer kick + optional sound / vibration
+    feedback();
+    if (reduceMotion || !ptr.animate) return;
+    ptr.animate(
+      [{ transform: "rotate(-14deg)" }, { transform: "rotate(5deg)", offset: 0.6 }, { transform: "rotate(0deg)" }],
+      { duration: 220, easing: "ease-out" });
+  }
+  function spinWheel() {   // one full turn, landing on the current shift
+    if (reduceMotion || !inner.animate) return;
+    inner.animate(
+      [{ transform: "rotate(" + (rot - 360) + "deg)" }, { transform: "rotate(" + rot + "deg)" }],
+      { duration: 1100, easing: "cubic-bezier(.2,.8,.25,1)" });
+  }
+
+  function mark(list, i, cls) { list[i].classList.add(cls); }
+
+  function drawWheel() {
+    const eff = getEff();
+
+    // turn the inner ring by the shortest way, so 25 -> 0 does not unwind a whole turn
+    let d = eff - curEff;
+    if (d > 13) d -= 26;
+    if (d < -13) d += 26;
+    if (d !== 0) {
+      rot -= d * STEP;
+      curEff = eff;
+      inner.style.transform = "rotate(" + rot + "deg)";
+      if (tickReady) tick();
+    }
+
+    const cr = choiceEl.value.trim();
+    const dec = cr !== "" && Number(cr) === 2;
+
+    for (let i = 0; i < 26; i++) {
+      oW[i].classList.remove("w-hl", "w-key"); iW[i].classList.remove("w-hl", "w-key");
+      oT[i].classList.remove("t-hl", "t-key"); iT[i].classList.remove("t-hl", "t-key");
+    }
+
+    // letters used in the message
+    const used = new Set();
+    for (const ch of msgEl.value) {
+      const c = ch.charCodeAt(0);
+      if (c >= 65 && c <= 90) used.add(c - 65);
+      else if (c >= 97 && c <= 122) used.add(c - 97);
+    }
+    used.forEach(function (k) {
+      const oi = dec ? (k - eff + 26) % 26 : k;      // outer ring = plain letter
+      const ii = dec ? k : (k + eff) % 26;           // inner ring = cipher letter
+      mark(oW, oi, "w-hl"); mark(oT, oi, "t-hl");
+      mark(iW, ii, "w-hl"); mark(iT, ii, "t-hl");
+    });
+
+    // the pair under the pointer: A (outer) and what it becomes (inner)
+    mark(oW, 0, "w-key"); mark(oT, 0, "t-key");
+    mark(iW, eff, "w-key"); mark(iT, eff, "t-key");
+    oW[0].parentNode.appendChild(oW[0]);
+    iW[eff].parentNode.appendChild(iW[eff]);
+
+    hubNum.textContent = eff;
+    svg.setAttribute("aria-valuenow", eff);
+    capEl.textContent = "Shift " + eff + " · " + (dec ? "decrypting (inner ring to outer ring)" : "encrypting (outer ring to inner ring)");
+    const sh = dec ? (26 - eff) % 26 : eff;
+    egEl.textContent = "A becomes " + caesar("A", sh) + "   |   Z becomes " + caesar("Z", sh);
+
+  }
+
+  // message accepts letters only: numbers are removed and an alert is shown
+  const msgAlert = $("msgAlert");
+  let alertTimer = null;
+  function flagNumbers() {
+    msgAlert.classList.add("show");
+    msgEl.classList.remove("bad");
+    void msgEl.offsetWidth;
+    msgEl.classList.add("bad");
+    clearTimeout(alertTimer);
+    alertTimer = setTimeout(function () {
+      msgAlert.classList.remove("show");
+      msgEl.classList.remove("bad");
+    }, 3500);
+  }
+  msgEl.addEventListener("input", function () {
+    const v = msgEl.value;
+    if (!/\p{Nd}/u.test(v)) return;
+    const pos = msgEl.selectionStart === null ? v.length : msgEl.selectionStart;
+    const keep = v.slice(0, pos).replace(/\p{Nd}/gu, "").length;   // keep the cursor where it was
+    msgEl.value = v.replace(/\p{Nd}/gu, "");
+    try { msgEl.setSelectionRange(keep, keep); } catch (err) {}
+    flagNumbers();
+  });
+  msgEl.addEventListener("input", drawWheel);
+  shiftEl.addEventListener("input", drawWheel);
+  choiceEl.addEventListener("input", drawWheel);
+  chips.forEach(function (c) { c.addEventListener("click", drawWheel); });
+
+  // tap an outer letter: A becomes that letter
+  oW.forEach(function (w, i) {
+    w.addEventListener("click", function () { shiftEl.value = String(i); drawWheel(); });
+  });
+
+  // drag the inner ring to set the shift (mouse and touch)
+  let drag = null;
+  function angleOf(e) {
+    const r = svg.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height * (CY / 374);
+    return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+  }
+  grip.addEventListener("pointerdown", function (e) {
+    drag = { prev: angleOf(e), acc: 0, start: getEff() };
+    svg.classList.add("drag");
+    grip.classList.add("drag");
+    try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+    try { svg.focus({ preventScroll: true }); } catch (err) {}
+    e.preventDefault();
+  });
+  grip.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    const a = angleOf(e);
+    let d = a - drag.prev;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    drag.prev = a;
+    drag.acc += d;
+    const eff = (((drag.start - Math.round(drag.acc / STEP)) % 26) + 26) % 26;
+    if (eff !== getEff()) { shiftEl.value = eff; drawWheel(); }
+  });
+  function endDrag() { drag = null; svg.classList.remove("drag"); grip.classList.remove("drag"); }
+  grip.addEventListener("pointerup", endDrag);
+  grip.addEventListener("pointercancel", endDrag);
+
+  // arrow keys turn the wheel too
+  svg.addEventListener("keydown", function (e) {
+    let step = 0;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") step = 1;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") step = -1;
+    else return;
+    e.preventDefault();
+    shiftEl.value = (getEff() + step + 26) % 26;
+    drawWheel();
+  });
+
+  drawWheel();
+  tickReady = true;
+
+  // intro: the wheel spins once when it first comes into view
+  if ("IntersectionObserver" in window && !reduceMotion) {
+    const io = new IntersectionObserver(function (entries) {
+      if (entries.some(function (en) { return en.isIntersecting; })) { spinWheel(); io.disconnect(); }
+    }, { threshold: 0.45 });
+    io.observe(svg);
+  }
+
+  // ---------- result box ----------
+  let revealRaf = 0;
+  // letters of the answer "decode" from random letters, left to right (display only; lastOutput is set instantly)
+  function setResultText(text, animate) {
+    cancelAnimationFrame(revealRaf);
+    if (!animate || reduceMotion) { resText.textContent = text; return; }
+    const head = text.indexOf("Result: ") === 0 ? "Result: " : "";
+    const chars = Array.from(text.slice(head.length));
+    const dur = Math.min(1000, 260 + chars.length * 40);
+    const t0 = performance.now();
+    function frame(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const done = Math.floor(p * chars.length);
+      let out = head;
+      for (let i = 0; i < chars.length; i++) {
+        const c = chars[i];
+        if (i < done || !/[A-Za-z]/.test(c)) out += c;
+        else {
+          const r = ABC[Math.floor(Math.random() * 26)];
+          out += (c >= "a" && c <= "z") ? r.toLowerCase() : r;
+        }
+      }
+      resText.textContent = out;
+      if (p < 1) revealRaf = requestAnimationFrame(frame);
+      else resText.textContent = text;
+    }
+    revealRaf = requestAnimationFrame(frame);
+  }
+
+  function show(kind, tag, text) {
+    resBox.className = "result " + kind;
+    resTag.textContent = tag;
+    srText.textContent = text;
+    setResultText(text, kind === "ok");
+    void resBox.offsetWidth;
+    resBox.classList.add("pop");
+    resBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function doRun() {
+    const choiceRaw = choiceEl.value.trim();
+    const shiftRaw = shiftEl.value.trim();
+    const message = msgEl.value;
+
+    const choice = Number(choiceRaw);
+    const shift = Number(shiftRaw);
+
+    if (choiceRaw === "" || !Number.isInteger(choice)) {
+      lastOutput = "";
+      show("err", "Check input", "Step I is empty: press Encrypt or Decrypt (or type 1 or 2).");
+      return;
+    }
+    if (shiftRaw === "" || !Number.isInteger(shift)) {
+      lastOutput = "";
+      show("err", "Check input", "Step III is empty: enter a whole number as the shift value.");
+      return;
+    }
+
+    const result = runProgram(choice, message, shift);
+    if (result === "Invalid choice!") {
+      lastOutput = "";
+      show("err", "Error", result);
+    } else {
+      lastOutput = result.slice("Result: ".length);
+      reverseBtn.textContent = choice === 1 ? "Decrypt this" : "Encrypt this";
+      show("ok", "Output", result);
+      spinWheel();
+    }
+  }
+
+  // Run works on button click and on Enter key (no form submission needed)
+  $("run").addEventListener("click", doRun);
+  [choiceEl, msgEl, shiftEl].forEach(function (el) {
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); doRun(); }
+    });
+  });
+
+  // run the answer back the other way (Encrypt -> Decrypt this, Decrypt -> Encrypt this)
+  reverseBtn.addEventListener("click", function () {
+    const wasEncrypt = Number(choiceEl.value.trim()) === 1;
+    msgEl.value = lastOutput;
+    choiceEl.value = wasEncrypt ? "2" : "1";
+    syncChips();
+    drawWheel();
+    doRun();
+  });
+
+  copyBtn.addEventListener("click", async function () {
+    try {
+      await navigator.clipboard.writeText(lastOutput);
+      copyBtn.textContent = "Copied";
+    } catch (err) {
+      copyBtn.textContent = "Press Ctrl+C";
+    }
+    setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+  });
+}
+</script>
+</body>
+</html>

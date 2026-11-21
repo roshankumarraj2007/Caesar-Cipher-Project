@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caesar Cipher</title>
+<script src="script.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="toolbar">
+    <div class="themes" role="group" aria-label="Theme">
+      <button type="button" class="sw" data-t="roman" title="Wine &amp; Gold" aria-label="Wine and Gold theme" aria-pressed="true"></button>
+      <button type="button" class="sw" data-t="emerald" title="Emerald &amp; Gold" aria-label="Emerald and Gold theme" aria-pressed="false"></button>
+      <button type="button" class="sw" data-t="royal" title="Royal Purple &amp; Gold" aria-label="Royal Purple and Gold theme" aria-pressed="false"></button>
+      <button type="button" class="sw" data-t="obsidian" title="Obsidian &amp; Silver" aria-label="Obsidian and Silver theme" aria-pressed="false"></button>
+    </div>
+    <button type="button" class="fb" id="fb" title="Sound and vibration" aria-label="Sound and vibration" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor"/>
+        <path class="waves" d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path class="waves" d="M18.5 5.5a9 9 0 0 1 0 13"/>
+        <line class="slash" x1="16" y1="9" x2="22" y2="15"/>
+        <line class="slash" x1="22" y1="9" x2="16" y2="15"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="brand">
+    <div class="emblem" aria-hidden="true">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#5a0f1f" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2.5"/>
+        <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        <circle cx="12" cy="16" r="1.3" fill="#5a0f1f"/>
+      </svg>
+    </div>
+    <h1>Caesar Cipher</h1>
+    <div class="orn" aria-hidden="true"><span class="ln"></span><span class="dia"></span><span class="ln"></span></div>
+    <p>Encrypt and decrypt messages by shifting letters</p>
+    <div class="tags"><span>Encrypt</span><span>Decrypt</span><span>Any shift</span></div>
+  </div>
+
+  <main class="card">
+    <div id="f" role="group" aria-label="Caesar cipher form">
+
+      <div class="field">
+        <div class="lbl"><span class="num">I</span>Enter choice</div>
+        <div class="choice-row">
+          <button type="button" class="chip" data-v="1"><b>1</b>Encrypt</button>
+          <button type="button" class="chip" data-v="2"><b>2</b>Decrypt</button>
+          <input id="choice" type="number" step="1" inputmode="numeric" placeholder="1 or 2" aria-label="Choice number">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="message"><span class="num">II</span>Enter message</label>
+        <input id="message" type="text" placeholder="Type your message here">
+        <div id="msgAlert" class="alert" role="alert" aria-live="assertive">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Only alphabets are allowed in the message. Numbers are not accepted.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="shift"><span class="num">III</span>Enter shift value</label>
+        <input id="shift" type="number" step="1" inputmode="numeric" placeholder="e.g. 3">
+        <p class="hint">Negative and large values work too. The shift is reduced to 0-25.</p>
+      </div>
+
+      <button type="button" class="run" id="run">Run</button>
+
+      <div id="result" class="result">
+        <div class="top">
+          <span class="tag" id="tag">Output</span>
+          <span class="acts">
+            <button type="button" class="copy" id="reverse">Decrypt this</button>
+            <button type="button" class="copy" id="copy">Copy</button>
+          </span>
+        </div>
+        <div class="text" id="text" aria-hidden="true">Your result will appear here</div>
+        <div class="sr-only" id="srText" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <section class="preview" aria-label="Cipher wheel">
+      <h2>Cipher Wheel</h2>
+      <p class="cap" id="pv-cap">Shift 0</p>
+      <div id="wheelBox"></div>
+      <p class="eg" id="eg"></p>
+      <p class="hint2">Drag the inner ring, tap any outer letter (A becomes that letter), or use the arrow keys. Gold letters are the letters of your message.</p>
+    </section>
+  </main>
+
+  <section class="education" aria-labelledby="education-title">
+    <div class="education-heading">
+      <p class="education-kicker">Cybersecurity learning</p>
+      <h2 id="education-title">Caesar Cipher: The Basics</h2>
+      <p>Learn how this classic letter-shifting method works and why it is useful for learning, but not for protecting real information.</p>
+    </div>
+
+    <div class="education-grid">
+      <article class="edu-card">
+        <h3>What is a Caesar Cipher?</h3>
+        <p>It is a classical cipher that replaces each letter with another letter a fixed number of places along the alphabet. The alphabet wraps around from Z to A.</p>
+      </article>
+
+      <article class="edu-card">
+        <h3>Plaintext and ciphertext</h3>
+        <p><strong>Plaintext</strong> is the original message that people can read. <strong>Ciphertext</strong> is the changed message produced by encryption.</p>
+      </article>
+
+      <article class="edu-card">
+        <h3>Encryption, decryption, and the key</h3>
+        <p><strong>Encryption</strong> shifts letters forward. <strong>Decryption</strong> shifts them backward to recover the message. The number of places to move is the <strong>shift key</strong>.</p>
+      </article>
+
+      <article class="edu-card edu-example">
+        <h3>Example: encrypt with a shift of 3</h3>
+        <ol>
+          <li>Start with plaintext: <code>HELLO</code>.</li>
+          <li>Move each letter forward by 3: H to K, E to H, L to O, L to O, O to R.</li>
+          <li>The ciphertext is <code>KHOOR</code>.</li>
+          <li>To decrypt, move each letter back by 3 to get <code>HELLO</code>.</li>
+        </ol>
+        <p>Spaces and punctuation stay as they are in this project.</p>
+      </article>
+
+      <article class="edu-card">
+        <h3>Classical and modern encryption</h3>
+        <p>Classical ciphers, like Caesar, use simple letter rules and small keys. Modern encryption uses carefully designed algorithms and keys that are far harder to guess. Secure systems can also check whether protected data was changed.</p>
+      </article>
+
+      <article class="edu-card edu-analysis">
+        <h3>Security Analysis</h3>
+        <p>The Caesar Cipher has only 25 useful shifts (a shift of 0 changes nothing). Every letter is shifted in the same way, so patterns in the original language remain. This makes messages easy to recover by trying the small set of keys or studying letter patterns.</p>
+        <p>It also does not prove who sent a message or show whether someone changed it. It cannot provide the security needed for modern communication.</p>
+      </article>
+    </div>
+
+    <aside class="edu-warning" role="note">
+      <strong>Educational use only:</strong> Do not use the Caesar Cipher to protect passwords, personal information, or real communications.
+    </aside>
+  </section>
+
+  <footer>Same logic as the C++ program. Decryption uses the reverse shift (26 - shift) % 26.</footer>
+</div>
+
+
+</body>
+</html>
